@@ -1,4 +1,4 @@
-const CACHE = "assistant-448-v1";
+const CACHE = "assistant-448-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
