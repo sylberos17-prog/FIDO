@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assistant La Saintes 4/4/48</title>
+<meta name="theme-color" content="#101736">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#101736; --surface:#1A2248; --surface2:#222B58;
+    --gold:#E9B44C; --violet:#8B7BD8; --ink:#F4F1E8; --muted:#9AA3C0;
+    --radius:10px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--navy); color:var(--ink);
+    font-family:'Barlow', system-ui, sans-serif;
+    font-size:16px; line-height:1.55;
+    display:flex; flex-direction:column; min-height:100vh;
+  }
+  header{
+    padding:20px 18px 14px; border-bottom:1px solid var(--surface2);
+    display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+  }
+  .brand{
+    font-family:'Barlow Condensed', sans-serif; font-weight:700;
+    font-size:2rem; letter-spacing:.02em; line-height:1;
+  }
+  .brand em{font-style:normal; color:var(--gold);}
+  .brand-sub{color:var(--muted); font-size:.9rem; margin-top:4px;}
+  #btn-settings{
+    background:var(--surface); border:1px solid var(--surface2); color:var(--muted);
+    border-radius:var(--radius); padding:8px 12px; cursor:pointer; font-size:1rem;
+  }
+  nav{
+    display:flex; gap:6px; padding:12px 14px; border-bottom:1px solid var(--surface2);
+    overflow-x:auto;
+  }
+  nav button{
+    font-family:'Barlow Condensed', sans-serif; font-size:1.05rem; font-weight:600;
+    letter-spacing:.03em; color:var(--muted); background:none; border:none;
+    padding:8px 14px; border-radius:var(--radius); cursor:pointer; white-space:nowrap;
+  }
+  nav button.active{background:var(--surface); color:var(--gold);}
+  nav button:focus-visible{outline:2px solid var(--violet); outline-offset:2px;}
+  main{flex:1; width:100%; max-width:760px; margin:0 auto; padding:18px 14px 90px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  h2{
+    font-family:'Barlow Condensed', sans-serif; font-weight:600; font-size:1.5rem;
+    margin-bottom:4px;
+  }
+  .hint{color:var(--muted); font-size:.92rem; margin-bottom:16px;}
+  label{display:block; font-weight:600; font-size:.92rem; margin:14px 0 5px;}
+  input[type=text], input[type=password], textarea, select{
+    width:100%; background:var(--surface); border:1px solid var(--surface2);
+    border-radius:var(--radius); color:var(--ink); padding:11px 12px;
+    font-family:'Barlow', sans-serif; font-size:1rem;
+  }
+  input:focus, textarea:focus, select:focus{outline:2px solid var(--violet); border-color:var(--violet);}
+  textarea{resize:vertical; min-height:80px;}
+  .chips{display:flex; flex-wrap:wrap; gap:7px; margin-top:8px;}
+  .chip{
+    background:var(--surface); border:1px solid var(--surface2); color:var(--ink);
+    border-radius:999px; padding:6px 13px; font-size:.88rem; cursor:pointer;
+  }
+  .chip:hover, .chip.on{border-color:var(--gold); color:var(--gold);}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:180px;}
+  .btn{
+    display:inline-block; margin-top:18px; background:var(--gold); color:#1A1608;
+    border:none; border-radius:var(--radius); padding:12px 22px;
+    font-family:'Barlow Condensed', sans-serif; font-size:1.15rem; font-weight:700;
+    letter-spacing:.03em; cursor:pointer;
+  }
+  .btn:disabled{opacity:.45; cursor:wait;}
+  .btn.secondary{background:var(--surface); color:var(--ink); border:1px solid var(--surface2);}
+  .out{
+    margin-top:20px; background:var(--surface); border:1px solid var(--surface2);
+    border-radius:var(--radius); padding:16px; white-space:pre-wrap; display:none;
+  }
+  .out.show{display:block;}
+  .out-tools{margin-top:10px; display:none;}
+  .out-tools.show{display:block;}
+  .loading{color:var(--violet); font-size:.95rem; margin-top:14px; display:none;}
+  .loading.show{display:block;}
+  #chatlog{display:flex; flex-direction:column; gap:12px; margin-bottom:16px;}
+  .msg{padding:12px 14px; border-radius:var(--radius); max-width:92%; white-space:pre-wrap;}
+  .msg.user{background:var(--surface2); align-self:flex-end;}
+  .msg.claude{background:var(--surface); align-self:flex-start; border-left:3px solid var(--gold);}
+  .chatbar{display:flex; gap:8px; margin-top:6px;}
+  .chatbar textarea{min-height:52px; flex:1;}
+  .chatbar .btn{margin-top:0; align-self:flex-end;}
+  .starter{cursor:pointer;}
+  footer{
+    position:fixed; bottom:0; left:0; right:0; text-align:center;
+    padding:8px; font-size:.78rem; color:var(--muted); background:var(--navy);
+    border-top:1px solid var(--surface2);
+  }
+  /* Modal réglages */
+  #modal{
+    display:none; position:fixed; inset:0; background:rgba(6,9,24,.75);
+    align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  #modal.show{display:flex;}
+  .modal-box{
+    background:var(--surface); border:1px solid var(--surface2); border-radius:var(--radius);
+    padding:22px; max-width:440px; width:100%;
+  }
+  .modal-box h3{font-family:'Barlow Condensed', sans-serif; font-size:1.4rem; margin-bottom:8px;}
+  .modal-box p{color:var(--muted); font-size:.9rem;}
+  @media (prefers-reduced-motion:no-preference){
+    .panel.active{animation:fade .25s ease;}
+    @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1;}}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">LA SAINTES <em>4/4/48</em></div>
+    <div class="brand-sub">Assistant du projet — mécénat, réseaux, organisation</div>
+  </div>
+  <button id="btn-settings" title="Réglages">⚙</button>
+</header>
+
+<nav>
+  <button class="active" data-panel="assistant">Assistant</button>
+  <button data-panel="mails">Mails mécènes</button>
+  <button data-panel="reseaux">Réseaux entrepreneurs</button>
+</nav>
+
+<main>
+
+  <!-- ===================== ASSISTANT ===================== -->
+  <section class="panel active" id="panel-assistant">
+    <h2>Ton copilote d'organisation</h2>
+    <p class="hint">Il connaît le projet par cœur : dates, formats, sponsors, accréditation FFS, contacts institutionnels. Pose-lui n'importe quel problème rencontré dans la création de l'événement.</p>
+    <div class="chips">
+      <span class="chip starter">La préfecture ne répond pas, je fais quoi ?</span>
+      <span class="chip starter">Comment relancer un sponsor sans réponse ?</span>
+      <span class="chip starter">Aide-moi à prioriser mes 3 prochaines actions</span>
+      <span class="chip starter">Plan B en cas de crue de la Charente</span>
+    </div>
+    <div id="chatlog" style="margin-top:18px;"></div>
+    <p class="loading" id="chat-loading">L'assistant réfléchit…</p>
+    <div class="chatbar">
+      <textarea id="chat-input" placeholder="Décris ton problème ou ta question…"></textarea>
+      <button class="btn" id="chat-send">Envoyer</button>
+    </div>
+  </section>
+
+  <!-- ===================== MAILS ===================== -->
+  <section class="panel" id="panel-mails">
+    <h2>Générateur de mails mécènes</h2>
+    <p class="hint">Choisis une entreprise de ta liste ou saisis-en une nouvelle. Le mail intègre l'avantage fiscal du mécénat (réduction d'impôt de 60 %) et la cause des Bagouz' à Manon.</p>
+
+    <label>Ta liste de prospects</label>
+    <div class="chips" id="prospects"></div>
+
+    <div class="row">
+      <div>
+        <label for="m-entreprise">Entreprise</label>
+        <input type="text" id="m-entreprise" placeholder="Ex. Coop Atlantique">
+      </div>
+      <div>
+        <label for="m-contact">Contact (si connu)</label>
+        <input type="text" id="m-contact" placeholder="Nom, fonction — optionnel">
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="m-palier">Palier visé</label>
+        <select id="m-palier">
+          <option>Laisser ouvert</option>
+          <option>Bronze</option>
+          <option>Argent</option>
+          <option>Or</option>
+          <option>Mécénat en nature (matériel, logistique)</option>
+        </select>
+      </div>
+      <div>
+        <label for="m-type">Type de mail</label>
+        <select id="m-type">
+          <option>Premier contact</option>
+          <option>Relance (sans réponse)</option>
+          <option>Suite à un échange (concrétiser)</option>
+          <option>Remerciement + prochaine étape</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="m-angle">Angle à mettre en avant</label>
+    <select id="m-angle">
+      <option>Le plus pertinent selon l'entreprise (laisse choisir l'assistant)</option>
+      <option>Visibilité locale et ancrage territorial</option>
+      <option>RSE / soutien aux Bagouz' à Manon (cancers pédiatriques)</option>
+      <option>Sport, dépassement de soi, première française</option>
+      <option>Mécénat en nature plutôt que financier</option>
+    </select>
+
+    <label for="m-notes">Contexte particulier (optionnel)</label>
+    <textarea id="m-notes" placeholder="Ex. : déjà croisé le directeur au forum des assos, ils sponsorisent le club de rugby…"></textarea>
+
+    <button class="btn" id="m-go">Générer le mail</button>
+    <p class="loading" id="m-loading">Rédaction en cours…</p>
+    <div class="out" id="m-out"></div>
+    <div class="out-tools" id="m-tools">
+      <button class="btn secondary" id="m-copy">Copier le mail</button>
+      <button class="btn secondary" id="m-vary">Autre version</button>
+    </div>
+  </section>
+
+  <!-- ===================== RESEAUX ===================== -->
+  <section class="panel" id="panel-reseaux">
+    <h2>Réseaux d'entrepreneurs — Saintes &amp; CDA</h2>
+    <p class="hint">L'assistant fait une recherche web en direct pour identifier les clubs, réseaux et événements d'entrepreneurs du territoire, avec leurs contacts et la meilleure façon de les approcher pour le 4/4/48.</p>
+    <div class="chips">
+      <span class="chip r-q">Clubs d'entreprises à Saintes et CDA</span>
+      <span class="chip r-q">CCI Rochefort et Saintonge : contacts et événements</span>
+      <span class="chip r-q">Réseaux BNI / afterworks en Charente-Maritime</span>
+      <span class="chip r-q">Entreprises locales engagées en mécénat sportif</span>
+    </div>
+    <label for="r-input" style="margin-top:16px;">Ou ta propre recherche</label>
+    <textarea id="r-input" placeholder="Ex. : y a-t-il un club d'entreprises actif sur la CDA de Saintes ? Qui contacter ?"></textarea>
+    <button class="btn" id="r-go">Rechercher</button>
+    <p class="loading" id="r-loading">Recherche web en cours…</p>
+    <div class="out" id="r-out"></div>
+  </section>
+
+</main>
+
+<footer>Assistant La Saintes 4/4/48 · 3–5 juin 2028 · au profit des Bagouz' à Manon</footer>
+
+<!-- Modal réglages -->
+<div id="modal">
+  <div class="modal-box">
+    <h3>Réglages</h3>
+    <p>Quand l'app est installée sur ton téléphone (hors Claude), elle a besoin de ta clé API Anthropic pour fonctionner. Elle reste stockée uniquement sur ton appareil, jamais dans le code en ligne.</p>
+    <label for="api-key">Clé API Anthropic</label>
+    <input type="password" id="api-key" placeholder="sk-ant-…">
+    <button class="btn" id="save-key">Enregistrer</button>
+    <button class="btn secondary" id="close-modal">Fermer</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Contexte projet injecté dans chaque appel ---------- */
+const CONTEXTE = `Tu es l'assistant personnel de Greg pour l'organisation de LA SAINTES 4/4/48.
+
+LE PROJET :
+- Événement de SUP (stand-up paddle) d'endurance sur la Charente, en plein cœur de Saintes (17), premier du genre en France sur parcours urbain fluvial.
+- Concept inspiré du défi 4/4/48 de David Goggins, adapté au SUP.
+- Dates : week-end de Pentecôte, du 3 au 5 juin 2028. Site : saintes448.fr
+- Formats : Solo 4/4/48, Solo 8/4/48, Équipe de 2, Équipe de 4. Âge minimum 16 ans avec autorisation parentale.
+- Association bénéficiaire officielle : Les Bagouz' à Manon (lutte contre les cancers pédiatriques, fondatrice Anne Herbert-Lorenz, relais local à Saintes : Dominique Gaulupeau).
+- ~70 bénévoles répartis en 11 pôles. Identité visuelle : bleu marine profond, or, violet.
+- Sponsoring en paliers Bronze / Argent / Or, plus mécénat en nature.
+- Organisateur : Greg, cheminot SNCF, athlète de SUP ultra-endurance, fondateur de la micro-entreprise Dossard Zéro (mais 4/4/48 et Dossard Zéro sont deux projets SÉPARÉS, ne jamais les mélanger).
+
+OÙ EN EST LE PROJET :
+- Dossier d'accréditation fédérale en cours auprès de la Fédération Française de Surf (FFS).
+- Démarches engagées : préfecture (CERFA 15030*01), LPO 17 (avis environnemental), Agence fluviale du Département 17, Mairie de Saintes, CDA de Saintes (contact : Jean-Marc Audouin).
+- Conventions de partenariat rédigées avec le SDIS 17 et la Croix-Rouge française.
+- Prospection sponsors lancée auprès de 16 entreprises locales : Caisse d'Épargne Aquitaine Poitou-Charentes, STC Nutrition, Leroy Merlin, Eiffage, SNCF TER, Coop Atlantique, Mutualia (demande incluant le prêt de leur camion-scène), ALM Allain, Dupré, Intersport, L'Angélys, Zolux, Croq'Papier, Leclerc, Intermarché, Euro Gestion. Intersport et Décathlon Saintes déjà contactés.
+- Demande de subvention SNCF rédigée (axes : mobilité durable, solidarité, rayonnement régional).
+
+ARGUMENTS MÉCÉNAT À CONNAÎTRE :
+- Réduction d'impôt de 60 % du montant du don (article 238 bis du CGI) pour le mécénat au profit des Bagouz' à Manon, dans la limite de 20 000 € ou 0,5 % du CA.
+- Contreparties possibles plafonnées à 25 % du don (visibilité, logo, invitations).
+- Le mécénat en nature (matériel, logistique, prêt de véhicule) est valorisable fiscalement aussi.
+
+TON STYLE :
+- Tu écris comme un humain, jamais comme un robot : ton naturel, incarné, direct, zéro jargon corporate, zéro formule creuse.
+- Tu es concret et orienté action : tu proposes des étapes, des formulations prêtes à l'emploi, des plans B.
+- Tu réponds en français.`;
+
+/* ---------- Clé API (uniquement nécessaire hors Claude) ---------- */
+function getKey() {
+  try { return localStorage.getItem("anthropic_key") || ""; } catch { return ""; }
+}
+function setKey(k) {
+  try { localStorage.setItem("anthropic_key", k); } catch {}
+}
+const modal = document.getElementById("modal");
+document.getElementById("btn-settings").onclick = () => {
+  document.getElementById("api-key").value = getKey();
+  modal.classList.add("show");
+};
+document.getElementById("close-modal").onclick = () => modal.classList.remove("show");
+document.getElementById("save-key").onclick = () => {
+  setKey(document.getElementById("api-key").value.trim());
+  modal.classList.remove("show");
+};
+
+/* ---------- Appel API ---------- */
+async function callClaude(messages, useSearch = false) {
+  const body = {
+    model: "claude-sonnet-4-6",
+    max_tokens: 1000,
+    system: CONTEXTE,
+    messages: messages
+  };
+  if (useSearch) {
+    body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+  }
+  const headers = { "Content-Type": "application/json" };
+  const key = getKey();
+  if (key) {
+    headers["x-api-key"] = key;
+    headers["anthropic-version"] = "2023-06-01";
+    headers["anthropic-dangerous-direct-browser-access"] = "true";
+  }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.error) {
+    if (String(data.error.message || "").toLowerCase().includes("api key") || res.status === 401) {
+      throw new Error("clé API manquante ou invalide — ouvre ⚙ en haut à droite pour la renseigner");
+    }
+    throw new Error(data.error.message || "erreur API");
+  }
+  if (!data.content) throw new Error("Réponse vide de l'API");
+  return data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim();
+}
+
+/* ---------- Navigation ---------- */
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.panel).classList.add("active");
+  };
+});
+
+/* ---------- Module Assistant (chat) ---------- */
+const history = [];
+const chatlog = document.getElementById("chatlog");
+const chatInput = document.getElementById("chat-input");
+const chatLoading = document.getElementById("chat-loading");
+const chatSend = document.getElementById("chat-send");
+
+function addMsg(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + (role === "user" ? "user" : "claude");
+  div.textContent = text;
+  chatlog.appendChild(div);
+  div.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+async function sendChat(text) {
+  if (!text.trim()) return;
+  addMsg("user", text);
+  history.push({ role: "user", content: text });
+  chatInput.value = "";
+  chatSend.disabled = true;
+  chatLoading.classList.add("show");
+  try {
+    const reply = await callClaude(history);
+    history.push({ role: "assistant", content: reply });
+    addMsg("claude", reply);
+  } catch (e) {
+    history.pop();
+    addMsg("claude", "Oups, je n'ai pas réussi à répondre (" + e.message + ").");
+  } finally {
+    chatSend.disabled = false;
+    chatLoading.classList.remove("show");
+  }
+}
+chatSend.onclick = () => sendChat(chatInput.value);
+chatInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(chatInput.value); }
+});
+document.querySelectorAll(".starter").forEach(c => c.onclick = () => sendChat(c.textContent));
+
+/* ---------- Module Mails ---------- */
+const PROSPECTS = ["Caisse d'Épargne APC","STC Nutrition","Leroy Merlin","Eiffage","SNCF TER","Coop Atlantique","Mutualia","ALM Allain","Dupré","Intersport","L'Angélys","Zolux","Croq'Papier","Leclerc","Intermarché","Euro Gestion"];
+const prospectsDiv = document.getElementById("prospects");
+PROSPECTS.forEach(p => {
+  const c = document.createElement("span");
+  c.className = "chip";
+  c.textContent = p;
+  c.onclick = () => {
+    document.querySelectorAll("#prospects .chip").forEach(x => x.classList.remove("on"));
+    c.classList.add("on");
+    document.getElementById("m-entreprise").value = p;
+  };
+  prospectsDiv.appendChild(c);
+});
+
+const mOut = document.getElementById("m-out");
+const mTools = document.getElementById("m-tools");
+const mLoading = document.getElementById("m-loading");
+const mGo = document.getElementById("m-go");
+let lastMailPrompt = null;
+
+function buildMailPrompt() {
+  const e = document.getElementById("m-entreprise").value.trim();
+  if (!e) { alert("Indique au moins le nom de l'entreprise."); return null; }
+  return `Rédige un mail de ${document.getElementById("m-type").value.toLowerCase()} pour l'entreprise « ${e} ».
+Contact : ${document.getElementById("m-contact").value.trim() || "inconnu (utilise une accroche générique adaptée)"}.
+Palier visé : ${document.getElementById("m-palier").value}.
+Angle : ${document.getElementById("m-angle").value}.
+Contexte particulier : ${document.getElementById("m-notes").value.trim() || "aucun"}.
+Contraintes : objet de mail inclus, 150-220 mots max, ton humain et direct (pas de langue de bois), une seule demande claire à la fin (rendez-vous ou appel), mention naturelle de la réduction fiscale de 60 % si pertinent, signature "Greg — La Saintes 4/4/48 — saintes448.fr". Donne UNIQUEMENT le mail (objet + corps), sans commentaire autour.`;
+}
+
+async function genMail(variation = false) {
+  let prompt;
+  if (variation && lastMailPrompt) {
+    prompt = lastMailPrompt + "\nGénère une NOUVELLE version différente : autre accroche, autre structure.";
+  } else {
+    prompt = buildMailPrompt();
+    if (!prompt) return;
+    lastMailPrompt = prompt;
+  }
+  mGo.disabled = true;
+  mLoading.classList.add("show");
+  mOut.classList.remove("show");
+  mTools.classList.remove("show");
+  try {
+    const mail = await callClaude([{ role: "user", content: prompt }]);
+    mOut.textContent = mail;
+    mOut.classList.add("show");
+    mTools.classList.add("show");
+  } catch (e) {
+    mOut.textContent = "Erreur : " + e.message;
+    mOut.classList.add("show");
+  } finally {
+    mGo.disabled = false;
+    mLoading.classList.remove("show");
+  }
+}
+mGo.onclick = () => genMail(false);
+document.getElementById("m-vary").onclick = () => genMail(true);
+document.getElementById("m-copy").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText(mOut.textContent);
+    document.getElementById("m-copy").textContent = "Copié ✓";
+    setTimeout(() => document.getElementById("m-copy").textContent = "Copier le mail", 2000);
+  } catch { alert("Sélectionne le texte et copie-le manuellement."); }
+};
+
+/* ---------- Module Réseaux ---------- */
+const rOut = document.getElementById("r-out");
+const rLoading = document.getElementById("r-loading");
+const rGo = document.getElementById("r-go");
+
+async function searchReseaux(query) {
+  if (!query.trim()) return;
+  rGo.disabled = true;
+  rLoading.classList.add("show");
+  rOut.classList.remove("show");
+  try {
+    const prompt = `Fais une recherche web pour répondre à cette question sur les réseaux d'entrepreneurs du territoire de Saintes et de la Communauté d'Agglomération (CDA) de Saintes, Charente-Maritime : « ${query} »
+Objectif : trouver des mécènes et partenaires pour La Saintes 4/4/48.
+Donne : les structures trouvées (nom, ce qu'elles font, contact ou site si disponible), et pour chacune un conseil concret sur comment l'approcher pour parler du 4/4/48. Termine par la meilleure première action à faire cette semaine. Reste factuel : si tu ne trouves pas une info, dis-le plutôt que d'inventer.`;
+    const reply = await callClaude([{ role: "user", content: prompt }], true);
+    rOut.textContent = reply;
+    rOut.classList.add("show");
+  } catch (e) {
+    rOut.textContent = "Erreur : " + e.message;
+    rOut.classList.add("show");
+  } finally {
+    rGo.disabled = false;
+    rLoading.classList.remove("show");
+  }
+}
+rGo.onclick = () => searchReseaux(document.getElementById("r-input").value);
+document.querySelectorAll(".r-q").forEach(c => c.onclick = () => {
+  document.getElementById("r-input").value = c.textContent;
+  searchReseaux(c.textContent);
+});
+
+/* ---------- Service worker (installation en app) ---------- */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
